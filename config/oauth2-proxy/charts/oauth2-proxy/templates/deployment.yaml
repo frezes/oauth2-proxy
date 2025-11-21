@@ -58,8 +58,10 @@ spec:
       {{- if and .Values.redis.enabled .Values.initContainers.waitForRedis.enabled }}
       initContainers:
       - name: wait-for-redis
-        image: "{{ .Values.initContainers.waitForRedis.image.repository }}:{{ include "kubectl.version" . }}"
+        image: "{{ .Values.global.imageRegistry | default .Values.initContainers.waitForRedis.image.registry }}/{{ .Values.initContainers.waitForRedis.image.repository }}:{{ include "kubectl.version" . }}"
         imagePullPolicy: {{ .Values.initContainers.waitForRedis.image.pullPolicy }}
+        command:
+          - kubectl
         args:
           - wait
           - pod/{{ include "oauth2-proxy.redis.fullname" . }}-master-0
@@ -78,7 +80,7 @@ spec:
       {{- end }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:v{{ include "oauth2-proxy.version" . }}"
+        image: "{{ .Values.global.imageRegistry | default .Values.image.registry }}/{{.Values.image.repository}}:v{{ include "oauth2-proxy.version" . }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         {{- if .Values.alphaConfig.enabled }}
@@ -355,9 +357,9 @@ spec:
         name: configaccesslist
 {{- end }}
 
-      {{- if .Values.imagePullSecrets }}
+      {{- if .Values.global.imagePullSecrets }}
       imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- include "oauth2-proxy.imagePullSecrets" . | indent 8 }}
       {{- end }}
     {{- if .Values.affinity }}
       affinity:

@@ -6,7 +6,12 @@ rules:
       - 'extensions.kubesphere.io'
     resources:
       - '*'
-
+  - verbs:
+      - '*'
+    apiGroups:
+      - ''
+    resources:
+      - 'secrets'
 ---
 kind: Role
 rules:
@@ -27,3 +32,10 @@ rules:
     resources:
       - 'ingresses'
       - 'networkpolicies'
+  - verbs:
+      - '*'
+    apiGroups:
+      - 'rbac.authorization.k8s.io'
+    resources:
+      - 'roles'
+      - 'rolebindings'

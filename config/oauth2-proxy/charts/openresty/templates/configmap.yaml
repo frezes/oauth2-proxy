@@ -17,7 +17,7 @@ data:
         end
 
         local whitelist_user_emails = {
-              {{- range $index, $email := .Values.authentication.blacklist }}
+              {{- range $index, $email := .Values.authentication.whitelist }}
               {{- if $index }}, {{- end }}"{{ $email }}"
               {{- end }}
             }
@@ -84,7 +84,7 @@ data:
       </script>
     </head>
     <body>
-      <h3>oauth2-proxy 服务代理列表:</h3>
+      <h3>OAuth2-Proxy Proxy List:</h3>
       <table>
         <tr>
           <th>Service</th>
@@ -93,9 +93,9 @@ data:
         </tr>
 {{- range .Values.configs }}
         <tr>
-          <td><a class="dynamic-link" href="{{ .subPath }}">{{ .name }}</a></td>
+          <td><a class="dynamic-link" href="{{ .link | default .subPath }}">{{ .name }}</a></td>
           <td>{{ .description }}</td>
-          <td><a class="dynamic-link" href="{{ .subPath }}">{{ .subPath }}</a></td>
+          <td><a class="dynamic-link" href="{{ .link | default .subPath }}">{{ .link | default .subPath }}</a></td>
         </tr>
 {{- end }}
       </table>
@@ -171,8 +171,9 @@ data:
               auth_request /oauth2/auth;
               auth_request_set $x_auth_request_user   $upstream_http_x_auth_request_user;
               auth_request_set $x_auth_request_email  $upstream_http_x_auth_request_email;
-
+{{- if .Values.authentication.enabled }}
               access_by_lua_file /usr/local/openresty/nginx/scripts/authorize.lua;
+{{- end }}
               index  index.html index.htm;
             }
 
@@ -181,10 +182,12 @@ data:
               auth_request /oauth2/auth;
               auth_request_set $x_auth_request_user   $upstream_http_x_auth_request_user;
               auth_request_set $x_auth_request_email  $upstream_http_x_auth_request_email;
+{{- if $.Values.authentication.enabled }}
               access_by_lua_file /usr/local/openresty/nginx/scripts/authorize.lua;
+{{- end }}
               proxy_pass {{ .endpoint }};
 {{- with .additional }}
-  {{- toYaml . | nindent 14 }}
+  {{- . | nindent 14 }}
 {{- end }}
             }
 {{ end }}
@@ -193,7 +196,7 @@ data:
             error_page 401 = @error401;
 
             location @error401 {
-                return 302 {{ .Values.domain }}/oauth2/start?rd=$request_uri;
+                return 302 {{ .Values.global.host }}/oauth2/start?rd=$request_uri;
             }
 
         }

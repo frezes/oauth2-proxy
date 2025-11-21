@@ -1,0 +1,153 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+  # OAuth2-Proxy service external access address
+  # For example, using NodePort, the address is http://172.31.19.4:32080,
+  # using Ingress, the host is http://172.31.19.4.nip.io:80
+  host: "http://<oauth2-proxy-service-external-access-address>"
+
+  # No need to set this explicitly, KubeSphere's portal address will be auto-injected.
+  portal:
+    url: "http://<kubesphere-console-address>"
+
+openresty:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: openresty/openresty
+    tag: "1.21.4.1-0-alpine"
+  nodeSelector: {}
+
+  authentication:
+    enabled: false
+    whitelist : []
+    # - admin@kubesphere.io
+
+  service:
+    type: NodePort
+    portNumber: 80
+    nodePort: 32080
+    annotations: {}
+
+  configs: []
+    #- name: alertmanager
+    #  description: KubeSphere 监控栈内部 Alertmanager 端点
+    #  subPath: /alertmanager/
+    #  endpoint: http://whizard-notification-alertmanager.kubesphere-monitoring-system.svc:9093/
+    #  additional:
+    #    proxy_set_header Host $host;
+    #    proxy_set_header X-Real-IP $remote_addr;
+    #- name: prometheus
+    #  description: KubeSphere 监控栈内部 Prometheus 端点
+    #  subPath: /prometheus/
+    #  endpoint: http://prometheus-operated.kubesphere-monitoring-system.svc:9090/
+    #  additional:
+    #    proxy_set_header Host $host;
+    #    proxy_set_header X-Real-IP $remote_addr;
+
+
+oauth2-proxy:
+  enabled: true
+  image:
+    registry: quay.io
+    repository: oauth2-proxy/oauth2-proxy
+    tag: "v7.6.0"
+  nodeSelector: {}
+
+  config:
+    # OAuth client ID
+    clientID: "oauth2-proxy"
+    # OAuth client secret
+    clientSecret: "oauth2-proxy"
+    # Create a new secret with the following command
+    # openssl rand -base64 32 | head -c 32 | base64
+    # Use an existing secret for OAuth2 credentials (see secret.yaml for required fields)
+    # Example:
+    # existingSecret: secret
+    cookieSecret: "IwwLQh_8mE-tRjgLmOhoqiBhQIL6AaRFNXRT9zopNG8="
+
+  extraArgs:
+    provider: oidc
+    provider-display-name: "kubesphere"
+    cookie-secure: false
+    cookie-refresh: 1m
+    cookie-expire: 30m
+    cookie-name: oauth2-proxy
+    set-xauthrequest: true
+    # The configuration is valid when openresty.enabled
+    upstream: http://oauth2-proxy-openresty.extension-oauth2-proxy.svc:80/
+    exclude-logging-path: "/ping,/ready"
+    # Issuer address
+    # The KubeSphere portal URL is filled by default, but if you use another OAuth Provider, change it
+    oidc-issuer-url: "{{ .Values.global.portal.url }}"
+    redirect-url: "{{ .Values.global.host }}/oauth2/callback"
+
+  service:
+    type: ClusterIP
+    portNumber: 4180
+
+  ingress:
+    enabled: false
+    # className: nginx
+    path: /oauth2
+    # Only used if API capabilities (networking.k8s.io/v1) allow it
+    pathType: ImplementationSpecific
+    # Used to create an Ingress record.
+    hosts:
+      - '{{ regexReplaceAll "(https?://|:\\d+)" .Values.global.host "" }}'
+    # Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
+    # Warning! The configuration is dependant on your current k8s API version capabilities (networking.k8s.io/v1)
+    # extraPaths:
+    # - path: /*
+    #   pathType: ImplementationSpecific
+    #   backend:
+    #     service:
+    #       name: ssl-redirect
+    #       port:
+    #         name: use-annotation
+    labels: {}
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: "true"
+    # tls:
+      # Secrets must be manually created in the namespace.
+      # - secretName: chart-example-tls
+      #   hosts:
+      #     - chart-example.local
+
+  # whether to use http or https
+  httpScheme: http
+
+  extraVolumes: []
+  # mount tls certs
+  # - name: tls-cert
+  #   secret:
+  #     secretName: oauth2-proxy-tls-assets
+
+  extraVolumeMounts: []
+  # mount tls certs
+  # - mountPath: /etc/oauth2-proxy/certs/
+  #   name: tls-cert
+
+  extraObjects: 
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: oauthclient-oauth2-proxy
+        namespace: kubesphere-system
+        labels:
+          config.kubesphere.io/type: oauthclient
+      type: config.kubesphere.io/oauthclient
+      stringData:
+        configuration.yaml: |
+          name: oauth2-proxy
+          secret: oauth2-proxy
+          grantMethod: auto
+          trusted: true
+          scopeRestrictions:
+            - 'openid'
+            - 'email'
+            - 'profile'
+          redirectURIs:
+            - {{ .Values.global.host }}/oauth2/callback

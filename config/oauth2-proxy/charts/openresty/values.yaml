@@ -2,6 +2,11 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  host: ""
+
 nameOverride: ""
 fullnameOverride: ""
 
@@ -14,26 +19,34 @@ image:
 
 replicaCount: 1
 
-domain: ""
 authentication:
   enabled: false
-  blacklist: []
+  whitelist: []
 
 configs: []
-# - name: prometheus
-#   description: KubeSphere 监控栈内部 Prometheus 端点
-#   subPath: /prometheus/
-#   endpoint: http://prometheus-k8s.monitoring.svc:9090/
-#   additional:
-#     proxy_set_header Host $host;
-#     proxy_set_header X-Real-IP $remote_addr;
-# - name: alertmanager
-#   description: KubeSphere 监控栈内部 alertmanager 端点
-#   subPath: /alertmanager/
-#   endpoint: http://alertmanager-main.monitoring.svc:9093/
-#   additional:
-#     proxy_set_header Host $host;
-#     proxy_set_header X-Real-IP $remote_addr;
+  #- name: alertmanager
+  #  description: KubeSphere 监控栈内部 Alertmanager 端点
+  #  subPath: /alertmanager/
+  #  endpoint: http://whizard-notification-alertmanager.kubesphere-monitoring-system.svc:9093/
+  #  additional:
+  #    proxy_set_header Host $host;
+  #    proxy_set_header X-Real-IP $remote_addr;
+  #- name: prometheus
+  #  description: KubeSphere 监控栈内部 Prometheus 端点
+  #  subPath: /prometheus/
+  #  link: /prometheus/query
+  #  endpoint: http://prometheus-agent-operated.kubesphere-monitoring-system.svc:9090/
+  #  additional:
+  #    proxy_set_header Host $host;
+  #    proxy_set_header X-Real-IP $remote_addr;
+  #- name: whizard
+  #  description: KubeSphere 监控栈内部 Whizard Query UI
+  #  subPath: /whizard/
+  #  endpoint: http://query-frontend-whizard-operated.kubesphere-monitoring-system.svc:10902/
+  #  additional:
+  #    proxy_set_header X-Forwarded-Prefix /whizard;
+  #    proxy_set_header Host $host;
+  #    proxy_set_header X-Real-IP $remote_addr;
 
 
 serviceAccount:

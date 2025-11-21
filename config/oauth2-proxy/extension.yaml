@@ -1,12 +1,12 @@
 apiVersion: kubesphere.io/v1alpha1
 name: oauth2-proxy
-version: 7.6.1
+version: 7.6.3
 displayName:
   zh: OAuth2-Proxy 
   en: OAuth2-Proxy 
 description:
-  zh: OAuth2-Proxy 是一个反向代理的身份验证服务，支持来自 Google, Azure, OpenID Connect 等身份提供者。
-  en: A reverse proxy that provides authentication with Google, Azure, OpenID Connect and many more identity providers.
+  zh: 用 OAuth2-Proxy 轻松搞定统一认证，保护你的后端应用！
+  en: Easily handle unified authentication with OAuth2-Proxy and protect your backend apps!
 category: security
 keywords:
   - security
@@ -19,9 +19,8 @@ sources:
 kubeVersion: ">=1.19.0-0"
 ksVersion: ">=4.0.0-0"
 maintainers:
-  - name: "frezes"
-    email: "junhaozhang@kubesphere.io"
-    url: "https://github.com/frezes"
+  - name: KubeSphere
+    email: kubesphere@yunify.com
 provider:
   zh:
     name: "北京青云科技股份有限公司"
@@ -33,6 +32,7 @@ provider:
     url: "https://kubesphere.io"
 icon: ./static/favicon.svg
 screenshots:
+  - ./static/screenshots/architecture.png
 dependencies:
   - name: oauth2-proxy
     tags:
@@ -40,9 +40,7 @@ dependencies:
   - name: openresty
     tags:
     - extension
-# installationMode describes how to install subcharts, it can be HostOnly or Multicluster.
-# In Multicluster mode, the subchart with tag `extension` will only be deployed to the host cluster,
-# and the subchart with tag `agent` will be deployed to all selected clusters.
+    condition: openresty.enabled
 installationMode: HostOnly
 images:
   - quay.io/oauth2-proxy/oauth2-proxy:v7.6.0

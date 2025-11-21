@@ -21,9 +21,9 @@ spec:
       labels:
         {{- include "openresty.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- if .Values.global.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+      {{ include "openresty.imagePullSecrets" . | indent 8 }}
       {{- end }}
       serviceAccountName: {{ include "openresty.serviceAccountName" . }}
       securityContext:
@@ -32,7 +32,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.global.imageRegistry | default .Values.image.registry }}/{{.Values.image.repository}}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
